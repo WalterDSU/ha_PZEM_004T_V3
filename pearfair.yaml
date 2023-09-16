@@ -1,0 +1,552 @@
+modbus:
+  - type: udp
+    host: 192.168.8.143
+    port: 9000
+    name: "peacefair_PZEM_004T"
+    close_comm_on_error: false
+    #delay: 0
+    #message_wait_milliseconds: 30
+    retries: 3
+    retry_on_empty: false #Tcp为true udp为false
+    timeout: 60
+    
+    sensors:
+      - name: "PZEM 004T Voltage [V]"       
+        unique_id: pzem_004t_voltage_v          
+        device_class: voltage          
+        unit_of_measurement: V
+        state_class: measurement
+        slave: 1
+        address: 0
+        input_type: input
+        scale: 0.1
+        offset: 0
+        precision: 1
+        data_type: uint16
+      - name: "PZEM 004T Current [A]"
+        unique_id: pzem_004t_current_a        
+        unit_of_measurement: A          
+        state_class: measurement         
+        device_class: current          
+        slave: 1          
+        address: 1          
+        input_type: input          
+        scale: 0.001          
+        offset: 0          
+        precision: 3          
+        data_type: uint16          
+      - name: "PZEM 004T Power [W]"         
+        unique_id: pzem_004t_power_w          
+        unit_of_measurement: W          
+        state_class: measurement          
+        device_class: power         
+        slave: 1         
+        address: 3          
+        input_type: input          
+        scale: 0.1          
+        offset: 0          
+        precision: 1          
+        data_type: uint16          
+      - name: "PZEM 004T Energy [Wh]"          
+        unique_id: pzem_004t_energy_wh          
+        unit_of_measurement: Wh          
+        state_class: total_increasing          
+        device_class: energy          
+        slave: 1          
+        address: 5          
+        input_type: input          
+        scale: 1        
+        offset: 0          
+        precision: 1          
+        data_type: uint16          
+      - name: "PZEM 004T Frequency [Hz]"          
+        unique_id: pzem_004t_frequency_hz          
+        unit_of_measurement: Hz          
+        state_class: measurement          
+        slave: 1          
+        address: 7          
+        input_type: input          
+        scale: 0.1          
+        offset: 0         
+        precision: 1          
+        data_type: uint16          
+      - name: "PZEM 004T Power factor [PF]"          
+        unique_id: pzem_004t_power_factor_pf          
+        unit_of_measurement: PF          
+        state_class: measurement          
+        slave: 1          
+        address: 8         
+        input_type: input         
+        scale: 0.01          
+        offset: 0          
+        precision: 2         
+        data_type: uint16          
+      - name: "PZEM 004T Power Alarm Value [W]"          
+        unique_id: pzem_004t_power_alarm_value_w          
+        unit_of_measurement: W          
+        slave: 1          
+        address: 1          
+        #Input Registers - Function Code 0x04          
+        #Holding Registers - Function Code 0x03 & 0x10         
+        input_type: holding         
+        scale: 1          
+        offset: 0         
+        precision: 0          
+        data_type: uint16     
+
+      binary_sensors:          
+        - name: "PZEM 004T Power Alarm Status"         
+          unique_id: pzem_004t_power_alarm_status         
+          slave: 1          
+          address: 9          
+          input_type: input          
+input_number:
+  pzem_004t_box1:
+    name: "PZEM 004T Power Alarm Threshold [W]"
+    initial: 1
+    min: 1
+    # For PZEM-004T-10A use max value 2300 W,
+    # for PZEM-004T-100A use max value 23000 W
+    max: 23000
+    step: 1
+    mode: box
+    unit_of_measurement: W
+
+input_button:
+  pzem_004t_button0:
+    name: "PZEM 004T Set Power Alarm"
+    icon: mdi:flash-triangle
+
+  pzem_004t_button1:
+    name: "PZEM 004T Reset Energy Consumption"
+    icon: mdi:reload      
+
+switch:
+  - platform: template
+    switches:
+      pzem_004t_turn_modbus:
+        unique_id: pzem_004t_turn_modbus
+        friendly_name: "PZEM 004T Turn Modbus"
+        value_template: >-
+          {% if states('sensor.pzem_004t_voltage_v') != 'unavailable' %}
+            true
+          {% else %}
+            false
+          {% endif %}
+        turn_on:
+          service: modbus.write_register
+          data:
+            hub: PZEM_004T_V3
+            slave: 1
+            address: 9
+            value: 1
+        turn_off:
+          service: modbus.write_register
+          data:
+            hub: PZEM_004T_V3
+            slave: 1
+            address: 9
+            value: 0
+customize:
+  sensor.pzem_004t_energy_wh:
+    last_reset: '1970-01-01T00:00:00+00:00'
+  sensor.pzem_004t_voltage_v:
+    icon: mdi:flash
+  sensor.pzem_004t_current_a:
+    icon: mdi:flash-circle
+  sensor.pzem_004t_power_w:
+    icon: mdi:flash-outline
+  sensor.pzem_004t_energy_wh:
+    icon: mdi:flash-circle-outline
+  sensor.pzem_004t_frequency_hz:
+    icon: mdi:flash-circle
+  sensor.pzem_004t_power_factor_pf:
+    icon: mdi:flash-circle
+  sensor.pzem_004t_power_alarm_value_w:
+    icon: mdi:flash-circle
+  binary_sensor.pzem_004t_power_alarm_status:
+    icon: mdi:flash-alert
+
+shell_command:
+  pzem_004t_reset:
+    command: echo '0' > /sys/class/gpio/gpio21/value
+
+
+- name: hub1
+    type: rtuovertcp
+    host: 485转tcp IP地址
+    port: 502
+
+    sensors:
+      - name: 666_voltage
+        unit_of_measurement: V
+        slave: 1
+        address: 8192
+        input_type: holding
+        data_type: float32
+        count: 2
+        precision: 2
+        device_class: voltage
+
+      - name: 666_power_current
+        unit_of_measurement: A
+        slave: 1
+        address: 8194
+        data_type: float32
+        count: 2
+        precision: 2
+        device_class: current
+        
+      - name: 666_power
+        unit_of_measurement: W
+        slave: 1
+        address: 8196
+        input_type: holding
+        data_type: float32
+        scale: 1000
+        count: 2
+        precision: 2
+        device_class: power
+
+      - name: 666_Freq
+        unit_of_measurement: Hz
+        slave: 1
+        address: 8206
+        input_type: holding
+        data_type: float32
+        count: 2
+        precision: 2
+        device_class: frequency
+
+      - name: 666_totalkWh
+        unit_of_measurement: kWh
+        slave: 1
+        address: 16384
+        input_type: holding
+        data_type: float32
+        count: 2
+        precision: 2
+        device_class: energy
+        state_class: total_increasing
+
+         modbus:
+          
+#https://community.home-assistant.io/t/assistance-with-modbus-and-pzem-004t/330723/3
+          
+- name: PZEM_004T_V3
+          
+type: serial
+          
+method: rtu
+          
+port: /dev/rfcomm0
+          
+baudrate: 9600
+          
+stopbits: 1
+          
+bytesize: 8
+          
+parity: N
+          
+timeout: 60
+          
+retries: 3
+          
+retry_on_empty: true
+          
+close_comm_on_error: false
+          
+sensors:
+          
+- name: "PZEM 004T Voltage [V]"
+          
+unique_id: pzem_004t_voltage_v
+          
+device_class: voltage
+          
+unit_of_measurement: V
+         
+state_class: measurement
+          
+slave: 1
+          
+address: 0
+          
+input_type: input
+          
+scale: 0.1
+          
+offset: 0
+          
+precision: 1
+          
+data_type: uint16
+          
+- name: "PZEM 004T Current [A]"
+          
+unique_id: pzem_004t_current_a
+          
+unit_of_measurement: A
+          
+state_class: measurement
+          
+device_class: current
+          
+slave: 1
+          
+address: 1
+          
+input_type: input
+          
+scale: 0.001
+          
+offset: 0
+          
+precision: 3
+          
+data_type: uint16
+          
+- name: "PZEM 004T Power [W]"
+         
+unique_id: pzem_004t_power_w
+          
+unit_of_measurement: W
+          
+state_class: measurement
+          
+device_class: power
+          
+slave: 1
+          
+address: 3
+          
+input_type: input
+          
+scale: 0.1
+          
+offset: 0
+          
+precision: 1
+          
+data_type: uint16
+          
+- name: "PZEM 004T Energy [Wh]"
+          
+unique_id: pzem_004t_energy_wh
+          
+unit_of_measurement: Wh
+          
+state_class: total_increasing
+          
+device_class: energy
+          
+slave: 1
+          
+address: 5
+          
+input_type: input
+          
+scale: 1
+         
+offset: 0
+          
+precision: 1
+          
+data_type: uint16
+          
+- name: "PZEM 004T Frequency [Hz]"
+          
+unique_id: pzem_004t_frequency_hz
+          
+unit_of_measurement: Hz
+          
+state_class: measurement
+          
+slave: 1
+          
+address: 7
+          
+input_type: input
+          
+scale: 0.1
+          
+offset: 0
+          
+precision: 1
+          
+data_type: uint16
+          
+- name: "PZEM 004T Power factor [PF]"
+          
+unique_id: pzem_004t_power_factor_pf
+          
+unit_of_measurement: PF
+          
+state_class: measurement
+          
+slave: 1
+          
+address: 8
+         
+input_type: input
+          
+scale: 0.01
+          
+offset: 0
+          
+precision: 2
+          
+data_type: uint16
+          
+- name: "PZEM 004T Power Alarm Value [W]"
+          
+unique_id: pzem_004t_power_alarm_value_w
+          
+unit_of_measurement: W
+          
+slave: 1
+          
+address: 1
+          
+#Input Registers - Function Code 0x04
+          
+#Holding Registers - Function Code 0x03 & 0x10
+          
+input_type: holding
+          
+scale: 1
+          
+offset: 0
+          
+precision: 0
+          
+data_type: uint16
+          
+binary_sensors:
+          
+- name: "PZEM 004T Power Alarm Status"
+         
+unique_id: pzem_004t_power_alarm_status
+          
+slave: 1
+          
+address: 9
+          
+input_type: input
+          
+
+         
+input_number:
+          
+pzem_004t_box1:
+          
+name: "PZEM 004T Power Alarm Threshold [W]"
+          
+initial: 1
+          
+min: 1
+          
+#For PZEM-004T-10A use max value 2300 W,
+          
+#for PZEM -004T-100A use max value 23000 W
+          
+max: 23000
+          
+step: 1
+          
+mode: box
+          
+unit_of_measurement: W
+          
+
+         
+input_button:
+          
+pzem_004t_button0:
+          
+name: "PZEM 004T Set Power Alarm"
+          
+icon: mdi:flash-triangle
+         
+pzem_004t_button1:
+          
+name: "PZEM 004T Reset Energy Consumption"
+          
+icon: mdi:reload
+          
+
+         
+switch:
+          
+- platform: template
+          
+switches:
+          
+pzem_004t_turn_modbus:
+          
+unique_id: pzem_004t_turn_modbus
+          
+friendly_name: "PZEM 004T Turn Modbus"
+          
+value_template: >-
+          
+{% if states('sensor.pzem_004t_voltage_ v ') != 'unavailable' %}
+          
+on
+          
+{% else %}
+          
+off
+          
+{% endif %}
+          
+turn_on:
+          
+service: modbus.restart
+          
+data:
+          
+hub: PZEM_004T_V3
+          
+turn_off:
+         
+service: modbus.stop
+          
+data:
+          
+hub: PZEM_004T_V3
+          
+
+         
+homeassistant:
+          
+name: Home
+          
+unit_system: metric
+          
+customize:
+          
+sensor.pzem_004t_energy_wh:
+          
+last_reset: '1970-01-01T00:00:00+00:00'
+          
+sensor.pzem_004t_frequency_hz:
+          
+icon: mdi:current -ac
+          
+sensor.pzem_004t_power_factor_pf:
+          
+icon: mdi:angle-acute
+          
+sensor.pzem_004t_power_alarm_value_w:
+          
+icon: mdi:meter-electric
+          
+
+         
+shell_command:
+          
+#https://community.home-assistant.io/t/how-to-use-pzem004t-energy -monitor-with-esphome/107083/186
+         
+send_reset_to_pzem_004t: echo -en '\x01\x42\x80\x11' > /dev/rfcomm0

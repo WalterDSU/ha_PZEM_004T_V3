@@ -1,5 +1,5 @@
 # ha_PZEM_004T_V3
-Instruction how to use PZEM_004T_V3 without ESPHome (ha native Modbus)
+Instruction how to use PZEM_004T_V3 without ESPHome and integrations. Only ha native Modbus codes.
 with fllowing  four type connections.
 
 # Type of modbus.

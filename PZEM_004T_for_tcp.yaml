@@ -1,12 +1,8 @@
 modbus:
   - name: PZEM_004T_V3
-    type: serial
-    method: rtu
-    port: /dev/rfcomm0
-    baudrate: 9600
-    stopbits: 1
-    bytesize: 8
-    parity: N
+    type: tcp
+    host: 485转tcp IP地址
+    port: 502
     timeout: 60
     retries: 3
     retry_on_empty: true

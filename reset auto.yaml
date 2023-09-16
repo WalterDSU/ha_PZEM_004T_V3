@@ -1,0 +1,51 @@
+- id: reset_pzem_004t_on_button
+  alias: Reset Energy Consumption on Button
+  description: ''
+  trigger:
+    - platform: state
+      entity_id: input_button.pzem_004t_button1
+  condition: []
+  action:
+    - service: automation.trigger
+      data:
+        skip_condition: true
+      target:
+        entity_id: automation.reset_energy_consumption_every_month
+  initial_state: 'on'
+
+- id: reset_pzem_004t_every_month
+  alias: Reset Energy Consumption every Month
+  description: ''
+  trigger:
+    - platform: time
+      at: '00:00:01'
+    - platform: homeassistant
+      event: start
+  condition:
+    - condition: template
+      value_template: >
+        {% if now().day == 1 -%}
+          {{ now() - state_attr('automation.reset_energy_consumption_every_month', 'last_triggered') > timedelta(hours=24) }}
+        {%- else -%}
+          False
+        {%- endif %}
+  action:
+    - service: shell_command.send_reset_to_pzem_004t
+      data: {}
+  mode: single
+
+- id: set_power_alarm_of_pzem_004t_on_button
+  alias: Set Power Alarm on Button
+  description: ''
+  trigger:
+    - platform: state
+      entity_id:
+        - input_button.pzem_004t_button0
+  condition: []
+  action:
+    - service: modbus.write_register
+      data:
+        address: 1
+        hub: PZEM_004T_V3
+        value: '{{ states(''input_number.pzem_004t_box1'') | round(0) }}'
+  mode: single
